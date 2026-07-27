@@ -1,10 +1,8 @@
 {
   "version": "2.5.0",
-  "url": "https://github.com/rayindonisia00-bot/vovie-dist/releases/download/v2.5.0/Vovie-Setup-2.5.0.exe",
   "notes": "环境降噪选项、口述工作流、系统设置指令包、发行加固",
-  "sha256": "1775937da8a8d2ace3405412686ee52633cb237c28c27e1ba6ec0a2218da36d6",
-  "size": 170872491,
+  "sha256": "6ed30909a3c7226696175e6097efb1f2ede62612c8385195abc6542f37e66e27",
+  "size": 170872316,
   "released": "2026-07-27",
-  "access": "private",
-  "contact": "rayindonisia00@gmail.com"
+  "api": "https://vovie-auth.rayindonisia00.workers.dev"
 }
