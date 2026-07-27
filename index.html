@@ -61,6 +61,30 @@
     border:none; font-family:inherit; cursor:pointer;
   }
   .cta.done{background:var(--ok)}
+  .cta[disabled]{opacity:.55; cursor:default}
+  .gate{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%; max-width:460px}
+  .gate input{
+    flex:1 1 240px; min-width:0; padding:15px 16px; border-radius:10px;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    font:inherit; font-family:ui-monospace,Consolas,monospace; text-align:center;
+    letter-spacing:.06em;
+  }
+  .gate input:focus-visible, .apply input:focus-visible, .apply textarea:focus-visible{
+    outline:2px solid var(--signal); outline-offset:1px
+  }
+  .apply{
+    margin-top:22px; padding:20px; border:1px solid var(--line);
+    border-radius:12px; background:var(--card); display:flex; flex-direction:column; gap:6px;
+  }
+  .apply h3{margin:0 0 8px; font-size:16px}
+  .apply label{font-size:13px; color:var(--ink-3); margin-top:8px}
+  .apply .req{color:var(--signal)}
+  .apply input, .apply textarea{
+    padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); font:inherit; width:100%; resize:vertical;
+  }
+  .apply .cta{margin-top:16px; align-self:flex-start}
+  .msg-ok{color:var(--ok)} .msg-bad{color:var(--signal)}
   .cta:hover{transform:translateY(-1px)}
   .cta:focus-visible{outline:3px solid var(--signal); outline-offset:3px}
   .cta small{font-weight:400; opacity:.7; font-size:14px}
@@ -97,12 +121,13 @@
   <div class="ring" aria-hidden="true"></div>
   <h1>Vovie</h1>
   <p class="tag">按住热键说话，松开出字 —— 落进任何窗口的光标处。<br>再按一个键，和 AI 语音对话。</p>
-  <button class="cta" id="apply" type="button">申请授权 <small id="ver">v2.5.0</small></button>
-  <p class="meta">
-    邮件联系 <code id="mail">rayindonisia00@gmail.com</code>
-    <a id="mailto" href="#">（用邮件客户端打开）</a>
-  </p>
-  <p class="meta"><a id="dl" href="#">已获授权 → 前往下载</a></p>
+  <form class="gate" id="dlform" autocomplete="off">
+    <input id="code" name="code" placeholder="输入授权码 VOVIE-XXXX-XXXX"
+           spellcheck="false" aria-label="授权码">
+    <button class="cta" type="submit">下载 <small id="ver">v2.5.0</small></button>
+  </form>
+  <p class="meta" id="dlmsg" role="status"></p>
+  <p class="meta"><a href="#apply" id="toapply">还没有授权码？点这里申请 →</a></p>
   <p class="meta" id="size">约 163 MB · Windows 10/11 64 位</p>
 </header>
 
@@ -129,9 +154,22 @@
     </dl>
   </div>
   <p class="warn" style="margin-top:16px">
-    <strong>Vovie 是授权制软件</strong>，不公开分发。许可证与你的设备绑定，
-    把安装包转发给别人，对方装了也无法使用。激活全程在本机完成，<strong>不联网、不上传任何数据</strong>。
+    <strong>Vovie 是授权制软件</strong>，不公开分发。授权码与你的设备绑定 ——
+    把安装包或授权码转给别人，对方也用不了。
   </p>
+
+  <form class="apply" id="apply" autocomplete="on">
+    <h3>申请授权</h3>
+    <label for="email">你的邮箱 <span class="req">*</span></label>
+    <input id="email" name="email" type="email" required
+           placeholder="用来接收授权码" autocomplete="email">
+    <label for="who">怎么称呼你</label>
+    <input id="who" name="who" placeholder="选填" autocomplete="name">
+    <label for="note">打算用它做什么</label>
+    <textarea id="note" name="note" rows="3" placeholder="选填，一两句话就行"></textarea>
+    <button class="cta" type="submit" id="applybtn">提交申请</button>
+    <p class="meta" id="applymsg" role="status"></p>
+  </form>
 </section>
 
 <section>
@@ -194,57 +232,75 @@ fetch('version.json', {cache: 'no-cache'})
   })
   .catch(function () { /* 清单取不到就用页面上的静态内容，不给用户看报错 */ });
 
-// 申请授权 = 复制邮箱。【为什么不用 mailto 当主按钮】它交给系统默认邮件程序：
-// 没配客户端的人点了毫无反应，配了的人可能弹出一个从没用过的软件 ——
-// 两种都比"把地址直接给他"更糟。mailto 降级成旁边一个小链接。
+// 授权码换下载 + 提交申请。两件事都打到授权服务（Cloudflare Worker），
+// 地址从 version.json 的 api 字段取 —— 发版只改那一个文件，页面不用动。
 (function () {
-  var btn = document.getElementById('apply');
-  var mailEl = document.getElementById('mail');
-  var link = document.getElementById('mailto');
-  var LABEL = btn.innerHTML;   // 【只取一次】放进处理器里取，连点两下就会把反馈文字当成原文
-  var timer = null;
+  var API = null;
 
-  function addr() { return mailEl.textContent.trim(); }
-
-  function flash(msg, green) {
-    btn.textContent = msg;
-    btn.classList.toggle('done', !!green);
-    clearTimeout(timer);
-    timer = setTimeout(function () {
-      btn.innerHTML = LABEL;
-      btn.classList.remove('done');
-    }, 3000);
+  function say(el, text, ok) {
+    el.textContent = text;
+    el.className = "meta " + (ok === undefined ? "" : ok ? "msg-ok" : "msg-bad");
   }
 
-  function fallback() {
-    // 剪贴板被浏览器拒绝时（无用户手势、权限被关）走这里。
-    // 选中动作本身也可能抛，包起来 —— 地址本来就明文写在下面，选不中也不致命，
-    // 但【绝不能让用户点了没反应】。
-    try {
-      var r = document.createRange();
-      r.selectNodeContents(mailEl);
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(r);
-    } catch (e) { /* 选不中就算了，下面照样给提示 */ }
-    flash('请手动复制下面的邮箱', false);
-  }
+  fetch("version.json", { cache: "no-cache" })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      API = d.api || null;
+      if (d.version) { document.getElementById("ver").textContent = "v" + d.version; }
+      if (d.size) {
+        document.getElementById("size").textContent =
+          "约 " + Math.round(d.size / 1048576) + " MB · Windows 10/11 64 位" +
+          (d.released ? " · 发布于 " + d.released : "");
+      }
+      if (d.sha256) {
+        document.getElementById("sha").innerHTML = "SHA-256 <code>" + d.sha256 + "</code>";
+      }
+    })
+    .catch(function () { /* 清单取不到就用页面上的静态内容，不给用户看报错 */ });
 
-  btn.addEventListener('click', function () {
-    var mail = addr();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(mail).then(function () {
-        flash('邮箱已复制 ✓ ' + mail, true);
-      }, fallback);
-    } else {
-      fallback();
-    }
+  // 凭码下载：直接把浏览器带到服务端，由它验码后 302 到真实下载地址。
+  document.getElementById("dlform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var msg = document.getElementById("dlmsg");
+    var code = document.getElementById("code").value.trim().toUpperCase();
+    if (!code) { say(msg, "请先填授权码", false); return; }
+    if (!API) { say(msg, "服务暂时不可用，请稍后再试", false); return; }
+    say(msg, "正在验证授权码…");
+    window.location.href = API + "/api/download?code=" + encodeURIComponent(code);
   });
 
-  link.addEventListener('click', function (e) {
+  document.getElementById("toapply").addEventListener("click", function () {
+    setTimeout(function () { document.getElementById("email").focus(); }, 300);
+  });
+
+  // 提交申请：只发邮箱和两句可选说明，不采集任何其他东西。
+  document.getElementById("apply").addEventListener("submit", function (e) {
     e.preventDefault();
-    window.location.href = 'mailto:' + addr() + '?subject=' +
-      encodeURIComponent('Vovie 授权申请');
+    var btn = document.getElementById("applybtn");
+    var msg = document.getElementById("applymsg");
+    if (!API) { say(msg, "服务暂时不可用，请稍后再试", false); return; }
+    var payload = {
+      email: document.getElementById("email").value.trim(),
+      name: document.getElementById("who").value.trim(),
+      note: document.getElementById("note").value.trim()
+    };
+    btn.disabled = true;
+    say(msg, "提交中…");
+    fetch(API + "/api/apply", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        say(msg, d.ok ? d.message : (d.error || "提交失败，请稍后再试"), !!d.ok);
+        if (!d.ok) { btn.disabled = false; }
+      })
+      .catch(function () {
+        // 网络挂了别让按钮永远灰着 —— 用户得能重试
+        say(msg, "网络不通，请稍后再试", false);
+        btn.disabled = false;
+      });
   });
 })();
 </script>
