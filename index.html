@@ -58,7 +58,9 @@
     background:var(--ink); color:var(--paper); text-decoration:none;
     padding:15px 30px; border-radius:10px; font-weight:600; font-size:17px;
     transition:transform .12s ease, opacity .12s ease;
+    border:none; font-family:inherit; cursor:pointer;
   }
+  .cta.done{background:var(--ok)}
   .cta:hover{transform:translateY(-1px)}
   .cta:focus-visible{outline:3px solid var(--signal); outline-offset:3px}
   .cta small{font-weight:400; opacity:.7; font-size:14px}
@@ -95,7 +97,11 @@
   <div class="ring" aria-hidden="true"></div>
   <h1>Vovie</h1>
   <p class="tag">按住热键说话，松开出字 —— 落进任何窗口的光标处。<br>再按一个键，和 AI 语音对话。</p>
-  <a class="cta" id="apply" href="mailto:rayindonisia00@gmail.com?subject=Vovie%20%E6%8E%88%E6%9D%83%E7%94%B3%E8%AF%B7">申请授权 <small id="ver">v2.5.0</small></a>
+  <button class="cta" id="apply" type="button">申请授权 <small id="ver">v2.5.0</small></button>
+  <p class="meta">
+    邮件联系 <code id="mail">rayindonisia00@gmail.com</code>
+    <a id="mailto" href="#">（用邮件客户端打开）</a>
+  </p>
   <p class="meta"><a id="dl" href="#">已获授权 → 前往下载</a></p>
   <p class="meta" id="size">约 163 MB · Windows 10/11 64 位</p>
 </header>
@@ -187,6 +193,60 @@ fetch('version.json', {cache: 'no-cache'})
     }
   })
   .catch(function () { /* 清单取不到就用页面上的静态内容，不给用户看报错 */ });
+
+// 申请授权 = 复制邮箱。【为什么不用 mailto 当主按钮】它交给系统默认邮件程序：
+// 没配客户端的人点了毫无反应，配了的人可能弹出一个从没用过的软件 ——
+// 两种都比"把地址直接给他"更糟。mailto 降级成旁边一个小链接。
+(function () {
+  var btn = document.getElementById('apply');
+  var mailEl = document.getElementById('mail');
+  var link = document.getElementById('mailto');
+  var LABEL = btn.innerHTML;   // 【只取一次】放进处理器里取，连点两下就会把反馈文字当成原文
+  var timer = null;
+
+  function addr() { return mailEl.textContent.trim(); }
+
+  function flash(msg, green) {
+    btn.textContent = msg;
+    btn.classList.toggle('done', !!green);
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      btn.innerHTML = LABEL;
+      btn.classList.remove('done');
+    }, 3000);
+  }
+
+  function fallback() {
+    // 剪贴板被浏览器拒绝时（无用户手势、权限被关）走这里。
+    // 选中动作本身也可能抛，包起来 —— 地址本来就明文写在下面，选不中也不致命，
+    // 但【绝不能让用户点了没反应】。
+    try {
+      var r = document.createRange();
+      r.selectNodeContents(mailEl);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+    } catch (e) { /* 选不中就算了，下面照样给提示 */ }
+    flash('请手动复制下面的邮箱', false);
+  }
+
+  btn.addEventListener('click', function () {
+    var mail = addr();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(mail).then(function () {
+        flash('邮箱已复制 ✓ ' + mail, true);
+      }, fallback);
+    } else {
+      fallback();
+    }
+  });
+
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.location.href = 'mailto:' + addr() + '?subject=' +
+      encodeURIComponent('Vovie 授权申请');
+  });
+})();
 </script>
 </body>
 </html>
