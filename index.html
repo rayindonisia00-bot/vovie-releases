@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vovie · 常驻 Windows 的语音中枢</title>
+<meta name="description" content="按住热键说话，字进任何窗口；再按一个键，和 AI 语音对话。">
+<style>
+  :root{
+    --ink:#1b1d21; --ink-2:#4a4f57; --ink-3:#7c828c;
+    --paper:#f7f6f3; --card:#ffffff; --line:#e3e1dc;
+    --signal:#c8761f; --signal-soft:#f2e3cf;
+    --ok:#3f7d52;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#e8e6e2; --ink-2:#b0aca6; --ink-3:#84807a;
+      --paper:#131417; --card:#1b1d21; --line:#2c2f35;
+      --signal:#e0983f; --signal-soft:#3a2c18;
+      --ok:#6fae82;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e8e6e2; --ink-2:#b0aca6; --ink-3:#84807a;
+    --paper:#131417; --card:#1b1d21; --line:#2c2f35;
+    --signal:#e0983f; --signal-soft:#3a2c18; --ok:#6fae82;
+  }
+  :root[data-theme="light"]{
+    --ink:#1b1d21; --ink-2:#4a4f57; --ink-3:#7c828c;
+    --paper:#f7f6f3; --card:#ffffff; --line:#e3e1dc;
+    --signal:#c8761f; --signal-soft:#f2e3cf; --ok:#3f7d52;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:16px/1.7 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:clamp(32px,7vw,72px) 24px 80px}
+  header{display:flex; flex-direction:column; align-items:center; gap:20px; text-align:center}
+  .ring{
+    width:76px; height:76px; border-radius:50%;
+    border:7px solid var(--line);
+    box-shadow:0 0 0 1px var(--line) inset;
+    position:relative; flex:none;
+  }
+  .ring::after{
+    content:""; position:absolute; inset:-7px; border-radius:50%;
+    border:7px solid transparent; border-top-color:var(--signal);
+    animation:spin 3.2s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){ .ring::after{animation:none} }
+  h1{margin:0; font-size:clamp(30px,6vw,42px); letter-spacing:-.02em; text-wrap:balance}
+  .tag{margin:0; color:var(--ink-2); font-size:clamp(16px,3vw,19px); max-width:34em; text-wrap:balance}
+  .cta{
+    display:inline-flex; align-items:baseline; gap:12px; margin-top:8px;
+    background:var(--ink); color:var(--paper); text-decoration:none;
+    padding:15px 30px; border-radius:10px; font-weight:600; font-size:17px;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .cta:hover{transform:translateY(-1px)}
+  .cta:focus-visible{outline:3px solid var(--signal); outline-offset:3px}
+  .cta small{font-weight:400; opacity:.7; font-size:14px}
+  .meta{color:var(--ink-3); font-size:14px; margin:0}
+  .meta code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:12px; word-break:break-all}
+  section{margin-top:56px}
+  h2{font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+     margin:0 0 18px; font-weight:600}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .row{display:flex; gap:16px; padding:14px 18px; border-top:1px solid var(--line); align-items:baseline}
+  .row:first-child{border-top:none}
+  .row dt{flex:0 0 128px; margin:0; color:var(--ink-3); font-size:14px}
+  .row dd{margin:0; flex:1}
+  dl{margin:0}
+  kbd{
+    font:inherit; font-size:13px; background:var(--signal-soft); color:var(--ink);
+    border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:1px 7px;
+    white-space:nowrap;
+  }
+  ul{margin:0; padding-left:1.2em; color:var(--ink-2)}
+  li{margin:.35em 0}
+  .warn{border-left:3px solid var(--signal); background:var(--signal-soft);
+        padding:14px 18px; border-radius:0 8px 8px 0; color:var(--ink); font-size:15px}
+  footer{margin-top:64px; padding-top:24px; border-top:1px solid var(--line);
+         color:var(--ink-3); font-size:14px; display:flex; flex-wrap:wrap; gap:8px 20px}
+  a{color:inherit}
+  footer a{color:var(--ink-2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="ring" aria-hidden="true"></div>
+  <h1>Vovie</h1>
+  <p class="tag">按住热键说话，松开出字 —— 落进任何窗口的光标处。<br>再按一个键，和 AI 语音对话。</p>
+  <a class="cta" id="dl" href="#">下载 Windows 版 <small id="ver">v2.5.0</small></a>
+  <p class="meta" id="size">约 163 MB · Windows 10/11 64 位</p>
+</header>
+
+<section>
+  <h2>装完怎么用</h2>
+  <div class="card">
+    <dl>
+      <div class="row"><dt>说话变字</dt><dd>按住 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>，或鼠标前侧键</dd></div>
+      <div class="row"><dt>和 AI 对话</dt><dd>按住 <kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>V</kbd>，或鼠标后侧键</dd></div>
+      <div class="row"><dt>说指令</dt><dd>按住 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>D</kbd>，说「打开蓝牙设置」这类</dd></div>
+      <div class="row"><dt>打断朗读</dt><dd>再按一次对话键 —— 立刻停下并就地开录</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section>
+  <h2>关于安全提示</h2>
+  <p class="warn">
+    本程序<strong>未做代码签名</strong>，首次运行时 Windows SmartScreen 会提示「未知发布者」。
+    这是未签名程序的正常表现，不代表程序有问题：点「更多信息」→「仍要运行」即可。
+    请只从本页下载 —— 下载后可核对下方 SHA-256 校验值。
+  </p>
+</section>
+
+<section>
+  <h2>你的数据去哪了</h2>
+  <div class="card">
+    <dl>
+      <div class="row"><dt>语音识别</dt><dd>在你的电脑上跑，<strong>录音不落盘、不上传</strong></div>
+      <div class="row"><dt>唤醒词</dt><dd>本机判断，不联网</dd></div>
+      <div class="row"><dt>对话历史</dt><dd>默认缓存在你的本机，可在设置里关闭</dd></div>
+      <div class="row"><dt>会外发的</dt><dd>只有你启用的功能：AI 对话发给 DeepSeek；中文朗读的文字发给微软 Edge TTS</dd></div>
+      <div class="row"><dt>我们收到的</dt><dd><strong>没有</strong> —— Vovie 没有服务器</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section>
+  <h2>运行要求</h2>
+  <ul>
+    <li>Windows 10 / 11 64 位，普通用户权限即可（不需要管理员）</li>
+    <li>约 400 MB 磁盘空间；首次运行自动下载语音模型（约 228 MB）</li>
+    <li>一个麦克风</li>
+    <li>要用 AI 对话功能，需自备 DeepSeek 等 API key</li>
+  </ul>
+</section>
+
+<footer>
+  <span id="sha" class="meta"></span>
+</footer>
+
+</div>
+<script>
+// 页面从同目录的 version.json 取最新信息 —— 发版只需改那一个文件，这里永不过期。
+fetch('version.json', {cache: 'no-cache'})
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    if (d.url) { document.getElementById('dl').href = d.url; }
+    if (d.version) { document.getElementById('ver').textContent = 'v' + d.version; }
+    if (d.size) {
+      document.getElementById('size').textContent =
+        '约 ' + Math.round(d.size / 1048576) + ' MB · Windows 10/11 64 位' +
+        (d.released ? ' · 发布于 ' + d.released : '');
+    }
+    if (d.sha256) {
+      document.getElementById('sha').innerHTML =
+        'SHA-256 <code>' + d.sha256 + '</code>';
+    }
+  })
+  .catch(function () { /* 清单取不到就用页面上的静态内容，不给用户看报错 */ });
+</script>
+</body>
+</html>
