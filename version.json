@@ -1,8 +1,8 @@
 {
   "version": "2.5.0",
-  "notes": "环境降噪选项、口述工作流、系统设置指令包、发行加固",
-  "sha256": "f05be5aa8e95baf0b15486e09acfa5f1c46e2fda5d77fc53a28b27e7ba4ab432",
-  "size": 170885801,
+  "notes": "工作流管理界面、五个新工作流、多点授权检查、完整使用指南",
+  "sha256": "1f81785576484b12bb0d0873acb7e52932984a2417b97e9d11c68861254faf03",
+  "size": 170900395,
   "released": "2026-07-27",
   "api": "https://vovie-auth.rayindonisia00.workers.dev"
 }
