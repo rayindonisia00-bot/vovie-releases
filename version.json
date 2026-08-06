@@ -1,9 +1,9 @@
 {
-  "version": "2.5.0",
+  "version": "2.8.0",
   "url": "https://rayindonisia00-bot.github.io/vovie-releases/",
-  "notes": "工作流管理界面、五个新工作流、多点授权检查、完整使用指南",
-  "sha256": "1f81785576484b12bb0d0873acb7e52932984a2417b97e9d11c68861254faf03",
-  "size": 170900395,
-  "released": "2026-07-27",
+  "notes": "本地知识库、流式字幕与边说边打、语音查文件；识别更准更稳，修掉多处会打错窗口/丢内容的问题",
+  "sha256": "32bb44c1c2bc5029a9ff4e5ebd6e017d63e2403fd2900eaa17c055788bc98d1e",
+  "size": 179774730,
+  "released": "2026-08-06",
   "api": "https://vovie-auth.rayindonisia00.workers.dev"
 }
